@@ -8,14 +8,16 @@ impl DaySolver for Day1 {
 
     const INFO: DayInfo = DayInfo::with_day_and_file("day1", "data/day1.txt");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let (_, counter) = _s.lines().map(|line| line.parse::<u16>().unwrap()).fold(
-            (u16::MAX, 0), // to don't care about first input value 
+    fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+        let (_, counter) = s.lines().filter_map(|line| line.parse::<u16>().ok()).fold(
+            (u16::MAX, 0), // we don't care about first input value
             |(previous_measurement, counter), measurement| {
-                if measurement > previous_measurement {
-                    return (measurement, counter + 1);
-                }
-
+                let counter = if measurement > previous_measurement {
+                    counter + 1
+                } else {
+                    counter
+                };
+        
                 (measurement, counter)
             },
         );
