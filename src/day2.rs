@@ -9,15 +9,15 @@ impl DaySolver for Day2 {
 
     const INFO: DayInfo = DayInfo::with_day_and_file("day2", "data/day2.txt");
 
-    fn solution(_s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
+    fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         use MoveDirection::*;
 
-        let (vertical, horizontal) = _s
+        let (vertical, horizontal) = s
             .lines()
             .filter_map(|line| line.parse::<MoveDirection>().ok())
             .fold(
                 (0, 0),
-                |(vertical, horizontal), move_driection| match move_driection {
+                |(vertical, horizontal), move_direction| match move_direction {
                     Horizontal(value) => (vertical, horizontal + value),
                     Vertical(value) => (vertical + value, horizontal),
                 },
