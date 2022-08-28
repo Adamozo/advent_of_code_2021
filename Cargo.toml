@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 aoc_utils = { path = "../aoc_utils"}
 anyhow = "^1.0.56"
+fnv = "^1.0"
 
 
 [dev-dependencies]
