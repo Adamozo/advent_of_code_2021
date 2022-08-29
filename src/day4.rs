@@ -2,6 +2,7 @@ use anyhow::*;
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
 use fnv::FnvHashMap as HashMap;
+use std::str::FromStr;
 
 pub struct Day4;
 
@@ -13,17 +14,15 @@ impl DaySolver for Day4 {
     fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         let (called_numbers, boards) = s.split_once("\n\n").unwrap();
 
-        let called_numbers: Vec<usize> = called_numbers
-            .split(',')
-            .map(|num| num.parse::<usize>().unwrap())
-            .collect();
-
         let mut boards: Vec<Board> = boards
             .split("\n\n")
-            .map(Board::new)
+            .filter_map(|board| board.parse::<Board>().ok())
             .collect();
 
-        for current_number in called_numbers {
+        for current_number in called_numbers
+            .split(',')
+            .map(|num| num.parse::<usize>().unwrap())
+        {
             for board in boards.iter_mut() {
                 if let Some(output) = board.call_number(&current_number) {
                     return Ok(output);
@@ -50,8 +49,10 @@ struct Board {
     number_location: HashMap<Number, Location>,
 }
 
-impl Board {
-    fn new(input: &str) -> Self {
+impl FromStr for Board {
+    type Err = anyhow::Error;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
         let fields_states = vec![vec![FieldState::Unmarked; 5]; 5];
         let mut number_location = HashMap::default();
 
@@ -66,12 +67,14 @@ impl Board {
             }
         }
 
-        Self {
+        Ok(Self {
             fields_states,
             number_location,
-        }
+        })
     }
+}
 
+impl Board {
     fn call_number(&mut self, number: &usize) -> Option<usize> {
         if let Some((row, column)) = self.number_location.get(number) {
             self.fields_states[*row][*column] = FieldState::Marked;
