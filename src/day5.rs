@@ -6,7 +6,7 @@ use text_io::try_scan;
 
 pub struct Day5;
 
-type VentsLocation = HashMap<(u32, u32), u32>; // key = cartesian location, value = number of location occurrence in lines
+type VentsLocation = HashMap<Point, u32>; // key = cartesian location, value = number of location occurrence in lines
 type Point = (u32, u32);
 
 impl DaySolver for Day5 {
@@ -26,14 +26,12 @@ impl DaySolver for Day5 {
                     )
                 })
             })
-            .filter(|points| points.as_ref().is_some())
-            .flat_map(|points| points.unwrap())
+            .flatten()
+            .flatten()
             .fold(
                 HashMap::default(),
                 |mut marked_vents: VentsLocation, vent_location| {
-                    if let Some(value) = marked_vents.insert(vent_location, 1) {
-                        *marked_vents.get_mut(&vent_location).unwrap() += value;
-                    }
+                    *marked_vents.entry(vent_location).or_insert(0) += 1;
 
                     marked_vents
                 },
@@ -42,7 +40,7 @@ impl DaySolver for Day5 {
         let number_of_points_with_may_lines = located_vents
             .values()
             .into_iter()
-            .filter(|num| **num >= 2)
+            .filter(|&num| *num >= 2)
             .count();
 
         Ok(number_of_points_with_may_lines)
