@@ -32,7 +32,7 @@ impl FromStr for Heightmap {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let data: Vec<Vec<u32>> = s
             .lines()
-            .map(|line| line.bytes().map(|num| num as u32 - 48).collect())
+            .map(|line| line.bytes().map(|num| (num - b'0') as u32).collect())
             .collect();
 
         let rows = data.len();
@@ -51,7 +51,7 @@ impl Heightmap {
         let current_value = self.data[current_row][current_column];
         NEIGHBORS
             .iter()
-            .map(|(row, column)| (*row + current_row as i8, *column + current_column as i8))
+            .map(|(row, column)| (row + current_row as i8, column + current_column as i8))
             .filter(|(row, column)| {
                 (0..self.rows as i8).contains(row) && (0..self.columns as i8).contains(column)
             })
