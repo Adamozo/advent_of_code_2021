@@ -1,37 +1,43 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
-use std::cmp::min;
 
 pub struct Day7;
 
 impl DaySolver for Day7 {
-    type Output = i32;
+    type Output = f32;
 
     const INFO: DayInfo = DayInfo::with_day_and_file("day7", "data/day7.txt");
 
     fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let positions: Vec<i32> = s
+        let mut positions: Vec<u32> = s
             .split(',')
-            .map(|position| position.parse::<i32>().unwrap())
+            .map(|position| position.parse::<u32>().unwrap())
             .collect();
-            
-        let maximum_position = positions.iter().max().unwrap();
 
-        let cost = |location: i32| -> i32 {
-            positions
-                .iter()
-                .map(|position| {
-                    let res = location - position;
-                    res.abs()
-                })
-                .sum()
-        };
+        let median = count_median(&mut positions);
 
-        let all_positions = 0..=*maximum_position;
-
-        let result = all_positions.fold(i32::MAX, |result, location| min(result, cost(location)));
+        let result = positions
+            .iter()
+            .map(|position| {
+                let res = *position as f32 - median;
+                res.abs()
+            })
+            .sum();
 
         Ok(result)
+    }
+}
+
+fn count_median(positions: &mut Vec<u32>) -> f32 {
+    positions.sort_unstable();
+
+    if positions.len() % 2 == 0 {
+        let mid_right = positions.len() / 2;
+        let mid_left = mid_right - 1;
+
+        (positions[mid_left] + positions[mid_right]) as f32 / 2.0
+    } else {
+        positions[positions.len() / 2] as f32
     }
 }
 
@@ -42,6 +48,11 @@ mod tests {
 
     #[test]
     fn data_from_default_file() {
-        assert_eq!(Day7::solve_default_file().unwrap(), 37)
+        assert_eq!(Day7::solve_default_file().unwrap(), 37.0)
+    }
+
+    #[test]
+    fn day7_count_median() {
+        assert_eq!(count_median(&mut vec![16, 1, 2, 0, 4, 2, 7, 1, 2, 14]), 2.0)
     }
 }
