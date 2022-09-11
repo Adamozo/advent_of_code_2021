@@ -17,8 +17,7 @@ impl DaySolver for Day5 {
     fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         let located_vents = s
             .lines()
-            .map(|line| {
-                // to get points that occurs in given line
+            .flat_map(|line| {
                 points_from_line(line).unwrap_or_else(|_| {
                     panic!(
                         "Unable to convert line: {}. Required format is x1,y1 -> x2,y2",
@@ -26,7 +25,6 @@ impl DaySolver for Day5 {
                     )
                 })
             })
-            .flatten()
             .flatten()
             .fold(
                 HashMap::default(),

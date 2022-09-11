@@ -1,3 +1,6 @@
+edition = "2021"
+version = "Two"
+
 binop_separator = "Front"
 empty_item_single_line = true
 fn_args_layout = "Tall"
