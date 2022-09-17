@@ -5,7 +5,7 @@ use aoc_utils::DaySolver;
 
 pub struct Day10;
 
-const BRACKETS_PAIRS: &[(char, char); 4] = &[('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
+const BRACKETS_PAIRS: [(char, char); 4] = [('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
 
 impl DaySolver for Day10 {
     type Output = u32;
@@ -21,27 +21,25 @@ impl DaySolver for Day10 {
 fn line_syntax_error_score(line: &str) -> u32 {
     let mut stack: VecDeque<char> = VecDeque::new();
 
-    for bracket in line.chars() {
-        let mut is_valid = false;
-
+    'next_bracket: for bracket in line.chars() {
+        let is_valid = false;
         for (left_bracket, right_bracket) in BRACKETS_PAIRS {
-            if bracket == *left_bracket {
+            if bracket == left_bracket {
                 stack.push_front(bracket);
-                is_valid = true;
-            } else if bracket == *right_bracket && *stack.front().unwrap() == *left_bracket {
-                let _unused = stack.pop_front();
-                is_valid = true;
+                continue 'next_bracket;
+            } else if bracket == right_bracket && stack.front() == Some(&left_bracket) {
+                let _ = stack.pop_front();
+                continue 'next_bracket;
             }
         }
-
         if !is_valid {
-            return get_char_score(&bracket);
+            return get_char_score(bracket);
         }
     }
     0
 }
 
-fn get_char_score(bracket: &char) -> u32 {
+fn get_char_score(bracket: char) -> u32 {
     match bracket {
         ')' => 3,
         ']' => 57,
@@ -61,7 +59,7 @@ mod tests {
     #[test_case('}' => 1197)]
     #[test_case('>' => 25137)]
     fn day10_get_char_score(bracket: char) -> u32 {
-        get_char_score(&bracket)
+        get_char_score(bracket)
     }
 
     #[test_case("{([(<{}[<>[]}>{[]{[(<()>" => 1197)]
