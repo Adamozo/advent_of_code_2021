@@ -20,18 +20,18 @@ impl DaySolver for Day12 {
 
         while !stack.is_empty() {
             if let Some(checked_cave) = stack.last_mut().unwrap().pop() {
-                if checked_cave == "end" {
-                    counter += 1;
-                } else if is_small_cave(checked_cave) {
-                    // small cave can occur only once in path
-                    if !path.contains(&checked_cave) {
-                        stack.push(caves_connections.get(&checked_cave).unwrap().clone());
-                        path.push(checked_cave);
-                    }
-                } else {
-                    // case when big cave is checked
-                    stack.push(caves_connections.get(&checked_cave).unwrap().clone());
-                    path.push(checked_cave);
+                match CaveType::from(checked_cave) {
+                    CaveType::End => {
+                        counter += 1;
+                    },
+                    cave_type => {
+                        if cave_type == CaveType::Small && !path.contains(&checked_cave)
+                            || cave_type == CaveType::Big
+                        {
+                            stack.push(caves_connections.get(&checked_cave).unwrap().to_owned());
+                            path.push(checked_cave);
+                        }
+                    },
                 }
             } else {
                 // when all caves connected to previous cave was checked
@@ -44,8 +44,21 @@ impl DaySolver for Day12 {
     }
 }
 
-fn is_small_cave(cave: &str) -> bool {
-    cave.chars().next().unwrap().is_lowercase()
+#[derive(Debug, PartialEq)]
+enum CaveType {
+    Big,
+    Small,
+    End,
+}
+
+impl From<&str> for CaveType {
+    fn from(s: &str) -> Self {
+        if s.chars().next().unwrap().is_lowercase() {
+            if s == "end" { Self::End } else { Self::Small }
+        } else {
+            Self::Big
+        }
+    }
 }
 
 fn get_caves_connections(s: &str) -> HashMap<&str, Vec<&str>> {
@@ -56,18 +69,18 @@ fn get_caves_connections(s: &str) -> HashMap<&str, Vec<&str>> {
 
         match left {
             "start" => {
-                connections.entry("start").or_insert(Vec::new()).push(right);
+                connections.entry("start").or_default().push(right);
             },
             "end" => {
-                connections.entry(right).or_insert(Vec::new()).push("end");
+                connections.entry(right).or_default().push("end");
             },
             left => {
                 if right != "start" {
-                    connections.entry(left).or_insert(Vec::new()).push(right);
+                    connections.entry(left).or_default().push(right);
                 }
 
                 if right != "end" {
-                    connections.entry(right).or_insert(Vec::new()).push(left);
+                    connections.entry(right).or_default().push(left);
                 }
             },
         }
