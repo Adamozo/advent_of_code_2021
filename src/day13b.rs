@@ -1,6 +1,6 @@
 use aoc_utils::DayInfo;
 use aoc_utils::DaySolver;
-use aoc_utils::{Grid, PositionInGrid};
+use fnv::FnvHashSet as HashSet;
 use std::str::FromStr;
 
 pub struct Day13b;
@@ -29,38 +29,37 @@ struct FoldSpec {
     value:     usize,
 }
 
+type Point = (usize, usize);
+
 struct OrigamiSetup {
-    grid:          Grid<char>,
+    points:        HashSet<Point>,
     folding_specs: Vec<FoldSpec>,
 }
 
 impl OrigamiSetup {
-    fn fold_once_and_count(&self) -> usize {
-        let folding_spec = &self.folding_specs[0];
+    fn fold_once_and_count(self) -> usize {
+        let OrigamiSetup {
+            points,
+            folding_specs,
+        } = self;
+        let folding_spec = &folding_specs[0];
 
-        let max_row = self.grid.max_row();
-        let max_column = self.grid.max_column();
+        points
+            .into_iter()
+            .map(|(mut x, mut y)| {
+                let updated = match folding_spec.direction {
+                    FoldDirection::Horizontally => &mut y,
+                    FoldDirection::Vertically => &mut x,
+                };
 
-        self.grid
-            .enumerate()
-            .filter(|(pos, _)| match folding_spec.direction {
-                FoldDirection::Horizontally => pos.row < folding_spec.value,
-                FoldDirection::Vertically => pos.column < folding_spec.value,
+                if *updated > folding_spec.value {
+                    *updated = 2 * folding_spec.value - *updated;
+                }
+
+                (x, y)
             })
-            .filter(|(pos, &value)| {
-                value == '#'
-                    || match folding_spec.direction {
-                        FoldDirection::Horizontally => {
-                            let row_mirror = max_row - pos.row;
-                            *self.grid.get_with_tuple(&(row_mirror, pos.column)).unwrap() == '#'
-                        },
-                        FoldDirection::Vertically => {
-                            let column_mirror = max_column - pos.column;
-                            *self.grid.get_with_tuple(&(pos.row, column_mirror)).unwrap() == '#'
-                        },
-                    }
-            })
-            .count()
+            .collect::<HashSet<Point>>()
+            .len()
     }
 }
 
@@ -68,30 +67,24 @@ impl FromStr for OrigamiSetup {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        fn parse_coordinates(s: &str) -> Grid<char> {
-            let mut grid = Grid::new_with_init_value(15, 11, '.');
+        fn parse_coordinates(s: &str) -> HashSet<Point> {
+            let mut points: HashSet<Point> = HashSet::default();
 
             for line in s.lines() {
-                let (y, x) = line
+                let (x, y) = line
                     .split_once(',')
                     .map(|(x_str, y_str)| {
                         (
-                            y_str.parse::<usize>().ok().unwrap(),
                             x_str.parse::<usize>().ok().unwrap(),
+                            y_str.parse::<usize>().ok().unwrap(),
                         )
                     })
                     .unwrap();
 
-                let pos = PositionInGrid::new(y, x);
-
-                if let Some(value) = grid.get_mut_with_pos(&pos) {
-                    *value = '#';
-                }
+                points.insert((x, y));
             }
 
-            // println!("{}", grid);
-
-            grid
+            points
         }
 
         fn parse_folds(s: &str) -> Vec<FoldSpec> {
@@ -113,13 +106,11 @@ impl FromStr for OrigamiSetup {
 
         let (coordinates, folds) = s.split_once("\n\n").unwrap();
 
-        let grid = parse_coordinates(coordinates);
+        let points = parse_coordinates(coordinates);
         let folding_specs = parse_folds(folds);
 
-        // println!("{:#?}", folding_specs);
-
         Ok(Self {
-            grid,
+            points,
             folding_specs,
         })
     }
