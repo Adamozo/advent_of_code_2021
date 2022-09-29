@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 pub struct Day13;
 
-type Point = (i8, i8);
+type Point = (u8, u8);
 
 impl DaySolver for Day13 {
     type Output = usize;
@@ -15,13 +15,11 @@ impl DaySolver for Day13 {
     fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
         let (coordinates, folds) = s.split_once("\n\n").unwrap();
 
-        let mut dots: HashSet<Point> = parse_input_coordinates(coordinates);
         let folds = parse_folds(folds);
-
-        dots = dots.iter().fold(HashSet::default(), |mut new_dots, point| {
-            let _unused = new_dots.insert(convert_point(&folds[0], *point));
-            new_dots
-        });
+        let dots: HashSet<Point> = parse_input_coordinates(coordinates)
+            .into_iter()
+            .map(|point| convert_point(&folds[0], point))
+            .collect();
 
         Ok(dots.len())
     }
@@ -64,7 +62,7 @@ fn parse_input_coordinates(s: &str) -> HashSet<Point> {
         .lines()
         .map(|line| {
             let (x, y) = line.split_once(',').unwrap();
-            (x.parse::<i8>().unwrap(), y.parse::<i8>().unwrap())
+            (x.parse::<u8>().unwrap(), y.parse::<u8>().unwrap())
         })
         .collect();
 
@@ -72,26 +70,12 @@ fn parse_input_coordinates(s: &str) -> HashSet<Point> {
 }
 
 fn convert_point(fold: &Fold, point: Point) -> Point {
+    let (x, y) = point;
     match fold {
-        Fold::Horizontally(line) => convert_point_horizontal(*line as i8, point),
-        Fold::Vertically(line) => convert_point_vertical(*line as i8, point),
+        Fold::Horizontally(line) if *line < y => (x, *line * 2 - y),
+        Fold::Vertically(line) if *line < x => (*line * 2 - x, y),
+        _ => (x, y),
     }
-}
-
-fn convert_point_horizontal(symmetry_line: i8, point: Point) -> Point {
-    let (x, y) = point;
-
-    let distance = (symmetry_line - y).abs();
-
-    (x, symmetry_line - distance)
-}
-
-fn convert_point_vertical(symmetry_line: i8, point: Point) -> Point {
-    let (x, y) = point;
-
-    let distance = (symmetry_line - x).abs();
-
-    (symmetry_line - distance, y)
 }
 
 #[cfg(test)]
