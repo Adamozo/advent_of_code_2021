@@ -10,7 +10,7 @@ aoc_utils = { path = "../aoc_utils"}
 anyhow = "^1.0.56"
 fnv = "^1.0"
 text_io = "^0.1.12"
-
+itertools = "^0.10.5"
 
 [dev-dependencies]
 test-case = "^2.0.0"
