@@ -11,45 +11,56 @@ impl DaySolver for Day14 {
     const INFO: DayInfo = DayInfo::with_day_and_file("day14", "data/day14.txt");
 
     fn solution(s: &str) -> anyhow::Result<<Self as DaySolver>::Output> {
-        let mut runner = s.parse::<Runner>()?;
-        runner.make_steps(10);
-        Ok(runner.get_result())
+        let runner = s.parse::<Runner>()?;
+
+        Ok(runner.make_steps(10))
     }
 }
+
+type Pair = [char; 2];
 
 #[derive(Debug)]
 struct Runner {
-    letter_occurrence: HashMap<char, usize>,
-    pair_occurrence:   HashMap<[char; 2], usize>,
-    rules:             HashMap<[char; 2], char>,
+    polymer_template: Vec<char>,
+    rules:            HashMap<Pair, char>,
 }
 
 impl Runner {
-    fn make_steps(&mut self, number_of_steps: usize) {
+    fn make_steps(&self, number_of_steps: usize) -> usize {
+        let mut letter_occurrence =
+            self.polymer_template
+                .iter()
+                .fold(HashMap::default(), |mut result, letter| {
+                    *result.entry(letter).or_default() += 1;
+                    result
+                });
+
+        let mut pair_occurrence = self.polymer_template.windows(2).map(|w| [w[0], w[1]]).fold(
+            HashMap::default(),
+            |mut counters, pair| {
+                *counters.entry(pair).or_insert(0) += 1;
+                counters
+            },
+        );
+
         for _ in 1..=number_of_steps {
-            let mut new_pair_occurrence: HashMap<[char; 2], usize> = HashMap::default();
+            let mut new_pair_occurrence: HashMap<Pair, usize> = HashMap::default();
 
-            for (key, value) in self.pair_occurrence.iter() {
-                let medium_letter = self.rules.get(key).unwrap();
+            for (pair @ [left, right], count) in pair_occurrence {
+                let middle = self.rules.get(&pair).unwrap();
 
-                *self.letter_occurrence.entry(*medium_letter).or_default() += value;
+                *letter_occurrence.entry(middle).or_default() += count;
 
-                // left from checked pair, received letter
-                *new_pair_occurrence
-                    .entry([key[0], *medium_letter])
-                    .or_default() += value;
-                // received letter, right from checked pair
-                *new_pair_occurrence
-                    .entry([*medium_letter, key[1]])
-                    .or_default() += value;
+                *new_pair_occurrence.entry([left, *middle]).or_default() += count;
+                *new_pair_occurrence.entry([*middle, right]).or_default() += count;
             }
 
-            self.pair_occurrence = new_pair_occurrence;
+            pair_occurrence = new_pair_occurrence;
         }
-    }
 
-    fn get_result(self) -> usize {
-        let mut v: Vec<(char, usize)> = self.letter_occurrence.into_iter().collect();
+        // ---------------------------------------------------------------------
+
+        let mut v: Vec<(&char, usize)> = letter_occurrence.into_iter().collect();
         v.sort_by(|x, y| x.1.cmp(&y.1));
 
         let (_, max) = v.last().unwrap();
@@ -63,50 +74,21 @@ impl FromStr for Runner {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (start, rules) = s.split_once("\n\n").unwrap();
+        let (first_line, rules) = s.split_once("\n\n").unwrap();
+        let polymer_template = first_line.chars().collect();
 
-        let rules = {
-            let mut res: HashMap<[char; 2], char> = HashMap::default();
+        let rules = rules.lines().fold(HashMap::default(), |mut rules, line| {
+            let (left, right) = line.split_once(" -> ").unwrap();
+            let mut left = left.chars();
+            let key: Pair = [left.next().unwrap(), left.next().unwrap()];
+            let value = right.chars().next().unwrap();
 
-            for (left, right) in rules.lines().map(|line| line.split_once(" -> ").unwrap()) {
-                let mut left = left.chars();
-                let key: [char; 2] = [left.next().unwrap(), left.next().unwrap()];
-
-                let _unused = res.insert(key, right.chars().next().unwrap());
-            }
-            res
-        };
-
-        let letter_occurrence = {
-            let mut result: HashMap<char, usize> = HashMap::default();
-
-            for letter in start.chars() {
-                *result.entry(letter).or_default() += 1;
-            }
-
-            result
-        };
-
-        let pair_occurrence = {
-            let mut chars = start.chars();
-            let first_char = chars.next().unwrap();
-
-            let (_, res) = chars.fold(
-                (first_char, HashMap::default()),
-                |(previous_char, mut pair_occurrence), current_char| {
-                    *pair_occurrence
-                        .entry([previous_char, current_char])
-                        .or_default() += 1;
-                    (current_char, pair_occurrence)
-                },
-            );
-
-            res
-        };
+            rules.insert(key, value);
+            rules
+        });
 
         Ok(Self {
-            letter_occurrence,
-            pair_occurrence,
+            polymer_template,
             rules,
         })
     }
